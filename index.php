@@ -1,4 +1,3 @@
-<!DOCTYPE>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -14,21 +13,20 @@
 <body>
 
 <?php
+
+
   		include_once("libs/curl_jquery.php");
   		include_once("libs/simple_html_dom.php");
-  		require_once ("libs/PHPExcel-1.8/Classes/PHPExcel.php");
-
+  		require_once("libs/PHPExcel-1.8/Classes/PHPExcel.php");
        //  $ip_url = 'https://api.ipify.org/';
-       //  $pageip = file_get_contents($ip_url);
+       //  $pageip = curl_get($ip_url);
        // echo $pageip = str_get_html($pageip);
-
-
     $start_time = new DateTime();
   	$root_url = "https://www.toy.ru";
   	$url = "https://www.toy.ru/catalog/boy_toys_igrovye_nabory/";
   	$patterns = "/\/catalog\/boy_toys_igrovye_nabory/";
   	$page_url = preg_replace($patterns, "", $url);
-  	$result = file_get_contents($url);
+  	$result = curl_get($url);
   	$start_page = str_get_html($result);
   	$category_name = "boy_toys_igrovye_nabory";
   	$category_id = 85;
@@ -92,12 +90,11 @@
       // Парсинг по товарам на сранице
       // $some_text = $root_url.$link.$pagination;
       $newline = "https://www.toy.ru/catalog/boy_toys_igrovye_nabory/?filterseccode%5B0%5D=toys_igrovye_nabory&PAGEN_8=".$pagination;
-      echo $newline."<br>";
+      // echo $newline."<br>";
       // echo $some_text."<br>";
-      $page = file_get_contents($newline);
+      $page = curl_get($newline);
       $page = str_get_html($page);
       foreach($page->find('script,link,head') as $tmp)$tmp->outertext = '';
-
       $product_cards = $page->find('.product-card');
       // echo $product_cards."<br>";
     	foreach ($product_cards as $key => $value) {
@@ -105,28 +102,31 @@
     		$product_price = preg_replace('/\s+/', '',$product_price);
         intval($product_price);
     		$product_link = $value->find('.product-name',0)->href;
-    		$product_page = file_get_contents($root_url.$product_link);
+    		$product_page = curl_get($root_url.$product_link);
     		$product_page = str_get_html($product_page);
         foreach($product_page->find('script,link,head') as $tmp)$tmp->outertext = '';
-
     		$characters = $product_page->find('.characters li[itemprop="sku"]',0)->plaintext;
     		$product_name = $product_page->find('h1.detail-name',0)->plaintext;
     		$product_articul = explode(":", $product_page->find('.characters li[itemprop="sku"]',0)->plaintext)[1];
-
-        // if($key < 5){
-        //   for ($p=0; $p <= 7; $p++) {
-        //     $recomended_products +=  $p != 7 ? $product_id + $p."," : $product_id + $p;
-        //   }
-        // }
-        // else{
-        //   for ($p=-3; $p <= 4; $p++) {
-        //     $recomended_products +=  $p != 4 ? $product_id + $p."," : $product_id + $p;
-        //   }
-        // }
-
-          $new_arr = "";
-
-    		//$image_url = $product_page->find('.detail-slider a',0)->href;
+        // Добавление сопутствующих товаров
+        // Добавление сопутствующих товаров
+        $recomended_products = "";
+        if($key < 5){
+          for ($p=0; $p <= 8; $p++) {
+            $recomended =  $p != 8 ? $product_id + $p."," : $product_id + $p;
+            if($product_id != $recomended){
+              $recomended_products.= $recomended;
+            }
+          }
+        }
+        else{
+          for ($p=-4; $p <= 4; $p++) {
+            $recomended =  $p != 4 ? $product_id + $p."," : $product_id + $p;
+            if($product_id != $recomended){
+              $recomended_products.= $recomended;
+            }
+          }
+        }
         $objPHPExcel->setActiveSheetIndex(0);
       	$active_sheet = $objPHPExcel->getActiveSheet();
     		$active_sheet = $objPHPExcel->getActiveSheet()->setTitle('Products');
@@ -134,7 +134,7 @@
     		$active_sheet->setCellValue("B".intval($num),"$product_name");
     		$active_sheet->setCellValue("C".intval($num),"86");
     		$active_sheet->setCellValue("L".intval($num),$product_articul);
-    		$active_sheet->setCellValue("N".intval($num),"catalog/".$category_name."/".$key."-0.jpeg");
+    		$active_sheet->setCellValue("N".intval($num),"catalog/".$category_name."/".$image_name."-0.jpeg");
     		$active_sheet->setCellValue("O".intval($num),"yes");
     		$active_sheet->setCellValue("K".intval($num),0);
     		$active_sheet->setCellValue("P".intval($num),$product_price);
@@ -143,15 +143,7 @@
     		$active_sheet->setCellValue("AI".intval($num),"0");
     		$active_sheet->setCellValue("AN".intval($num),"true");
     		$active_sheet->setCellValue("AH".intval($num),0);
-
-        // Добавление сопутствующих товаров
-        // for ($p=1; $p <= 7; $p++) {
-        //   $recomended_products =  $p != 7 ? $product_id+$p."," :  $product_id+$p;
-        //   array_push($recomended_products)
-        // }
-
         $active_sheet->setCellValue("AK".intval($num),$recomended_products);
-
         $num++;
     	   // $active_sheet->setCellValue("AB2","tax_class_id");
         // Тайтлы во втором листе эксель
@@ -160,25 +152,22 @@
         $active_sheet->setCellValue("A1","product_id");
     		$active_sheet->setCellValue("B1","image");
     		$active_sheet->setCellValue("C1","sort_order");
-
         // Парсинг по товару
     		for ($i=0; $i < count($product_page->find('.detail-slider a')); $i++) {
           //  Запись в ecxel
           $active_sheet->setCellValue("A".intval($image_collum),$product_id);
           $active_sheet->setCellValue("B".intval($image_collum),"catalog/".$category_name."/".$image_name."-".$i.".jpeg");
           $active_sheet->setCellValue("C".intval($image_collum), 0);
+      		// $ch = curl_init($product_page->find('.detail-slider a',$i)->href);
+    			// $fp = fopen('./catalog/'.$category_name."/".$image_name.'-'.$i.'.jpeg', 'wb');
+    			// curl_setopt($ch, CURLOPT_FILE, $fp);
+    			// curl_setopt($ch, CURLOPT_HEADER, 0);
+    			// curl_exec($ch);
+    			// curl_close($ch);
+    			// fclose($fp);
           $image_collum++;
-      		$ch = curl_init($product_page->find('.detail-slider a',$i)->href);
-    			$fp = fopen('./catalog/'.$category_name."/".$image_name.'-'.$i.'.jpeg', 'wb');
-    			curl_setopt($ch, CURLOPT_FILE, $fp);
-    			curl_setopt($ch, CURLOPT_HEADER, 0);
-    			curl_exec($ch);
-    			curl_close($ch);
-    			fclose($fp);
     		}
-
         $image_name ++;
-
     		//Атрибуты продукта
         $objPHPExcel->setActiveSheetIndex(2);
         $active_sheet = $objPHPExcel->getActiveSheet();
@@ -216,16 +205,12 @@
     	  $objWritter->save($category_name.'.xlsx');
         $hide = '-false';
         $product_id++;
-
         // подчищаем за собой
         $product_page->clear();
         unset($product_page);
-        break;
     	}
-        echo "Обработана ".$key." товаров на ".$pagination." страницах"."<br> id последненго товара - ".$product_id;
+        echo "Обработана ".$key." товаров на ".$pagination." странице"."<br> id последненго товара - ".$product_id;
         echo "<br> Работа скрипта: ".$years = date_diff($start_time, new DateTime())->s." секунд"."<br>";
-
-
         // подчищаем за собой
         $page->clear();
         unset($page);
