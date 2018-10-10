@@ -1,7 +1,9 @@
 <?php
 function curl_get($url, $referer = "www.google.com/")
 {
-		$proxies = ["89.250.10.14:56422","191.36.172.66:55952"];
+	//"89.250.10.14:56422",
+		// $proxies = ["95.31.211.160:54623"];
+		$proxies = ["195.205.175.116:46478"];
 		$steps = count($proxies);
 		$step = 0;
 		$try = true;
