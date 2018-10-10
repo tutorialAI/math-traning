@@ -5,10 +5,12 @@ function curl_get($url, $referer = "www.google.com/")
 		$steps = count($proxies);
 		$step = 0;
 		$try = true;
+		echo $proxies[$step]."<br>";
 		while($try){
 				// create curl resource
 				$ch = curl_init();
-				$proxy = isset($proxies[$step]) ? $proxies[$step] : null;
+				// $proxy = isset($proxies[$step]) ? $proxies[$step] : null;
+				$proxy = $proxies[$step];
 
 				curl_setopt($ch, CURLOPT_HEADER, 0);
 				curl_setopt($ch, CURLOPT_REFERER, $referer);
@@ -27,6 +29,7 @@ function curl_get($url, $referer = "www.google.com/")
 
 				$step++;
 				$try = (($step < $steps) && ($http_code != 200));
+				echo $http_code."<br>";
 		}
 		return $output;
 }
