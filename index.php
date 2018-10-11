@@ -202,7 +202,6 @@
           }
           $atriibuts_collum++;
     		}
-    	  $objWritter->save($category_name.'.xlsx');
         $hide = '-false';
         $product_id++;
         // подчищаем за собой
@@ -215,6 +214,7 @@
         $page->clear();
         unset($page);
    }
+   $objWritter->save($category_name.'.xlsx');
   exit();
   	?>
 
